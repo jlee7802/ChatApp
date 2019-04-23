@@ -1,0 +1,97 @@
+package com.category.service;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+
+import com.category.model.Category;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+@SpringBootApplication
+@EnableDiscoveryClient
+public class CategoryServiceApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(CategoryServiceApplication.class, args);
+	}
+	
+	private static List<Category> categoryList = new ArrayList<>();
+
+    @GetMapping("/categories")
+    public ResponseEntity<?> getMovies() {
+        return ResponseEntity.ok(categoryList);
+    }
+    
+	@GetMapping("/category/")
+	ResponseEntity<String> getAllCategory() {
+		ArrayList<Category> categoryList = new ArrayList<Category>();
+		
+		try {
+			Class.forName("org.postgresql.Driver");
+			Connection conn = DriverManager.getConnection(connectionString());
+			
+			String storedProc = "select * from get_all_category()";
+			PreparedStatement pstmt = conn.prepareStatement(storedProc);
+			
+			ResultSet rs = pstmt.executeQuery();
+			while(rs.next()) {
+				long categoryId = rs.getLong("id");
+				String categoryName = rs.getString("name");
+				Date createdDate = rs.getDate("created_date");
+				Date updatedDate = rs.getDate("updated_date");
+				
+				Category category = new Category(categoryId, categoryName, createdDate, updatedDate);
+				categoryList.add(category);
+			}
+		}
+		catch(SQLException err) {
+			System.out.println(err.getMessage());
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err.getMessage());
+		}
+		catch(ClassNotFoundException err) {
+			System.out.println(err.getMessage());
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err.getMessage());
+		}
+		
+		// Convert category list to json
+		String json = "";
+		
+		try {
+			ObjectMapper mapper = new ObjectMapper();
+			json = mapper.writeValueAsString(categoryList);
+		}
+		catch(Exception err) {
+			System.out.println();
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err.getMessage());
+		}
+		
+		return ResponseEntity.ok(json);
+	}
+	
+	@GetMapping("/category/activeUsers")
+	String getCategoryByActiveUsers() {
+		return "Active Users";
+	}
+	
+	String connectionString() {
+		String hostname = "category.cgbqmmmv1tjp.us-east-1.rds.amazonaws.com"; // Figure out how to put this in the config file.
+		String port = "5432";
+		String dbName = "category";
+		String userName = "jlee";
+		String password = "103190jj";
+		
+		return "jdbc:postgresql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password;
+	}
+}

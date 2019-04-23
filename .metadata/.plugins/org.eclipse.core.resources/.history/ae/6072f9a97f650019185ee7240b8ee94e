@@ -1,0 +1,22 @@
+package com.category.service;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import org.springframework.web.bind.annotation.GetMapping;
+
+
+@SpringBootApplication
+@EnableDiscoveryClient
+public class CategoryServiceApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(CategoryServiceApplication.class, args);
+	}
+	
+	@GetMapping("/name")
+	public String getControllerName()
+    {
+        return "StudentController - www.SpringBootDev.com";
+    }
+}

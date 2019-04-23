@@ -1,0 +1,170 @@
+package com.chat.service;
+
+import java.sql.Connection;
+import java.sql.Date;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+public class ChatController {
+	
+	// Return chats based on active users
+	@GetMapping("/chat/")
+	ResponseEntity<String> getAllChat() {
+		ArrayList<Chat> chatList = new ArrayList<Chat>();
+
+		try {
+			Class.forName("org.postgresql.Driver");
+			Connection conn = DriverManager.getConnection(connectionString());
+
+			String storedProc = "select * from get_all_chat()";
+			PreparedStatement pstmt = conn.prepareStatement(storedProc);
+
+			ResultSet rs = pstmt.executeQuery();
+			while (rs.next()) {
+				long chatId = rs.getLong("id");
+				String chatName = rs.getString("name");
+				String chatDesc = rs.getString("descr");
+				Date createdDate = rs.getDate("created_date");
+				Date updatedDate = rs.getDate("updated_date");
+				int groupId = rs.getInt("group_id");
+
+				Chat chat = new Chat(chatId, chatName, chatDesc, groupId, createdDate, updatedDate);
+				chatList.add(chat);
+			}
+		} catch (SQLException err) {
+			System.out.println(err.getMessage());
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err.getMessage());
+		} catch (ClassNotFoundException err) {
+			System.out.println(err.getMessage());
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err.getMessage());
+		}
+
+		// Convert category list to json
+		String json = "";
+
+		try {
+			ObjectMapper mapper = new ObjectMapper();
+			json = mapper.writeValueAsString(chatList);
+		} catch (Exception err) {
+			System.out.println();
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err.getMessage());
+		}
+
+		return ResponseEntity.ok(json);
+	}
+
+	// Get chats based on group id
+	@GetMapping("/chat/{groupId}")
+	ResponseEntity<String> getChatByGroup(@PathVariable int groupId) {
+		ArrayList<Chat> chatList = new ArrayList<Chat>();
+
+		try {
+			Class.forName("org.postgresql.Driver");
+			Connection conn = DriverManager.getConnection(connectionString());
+
+			String storedProc = "select * from get_chat_by_group(?)";
+			PreparedStatement pstmt = conn.prepareStatement(storedProc);
+			pstmt.setInt(1, groupId);
+
+			ResultSet rs = pstmt.executeQuery();
+			while (rs.next()) {
+				long chatId = rs.getLong("id");
+				String chatName = rs.getString("name");
+				String chatDesc = rs.getString("descr");
+				Date createdDate = rs.getDate("created_date");
+				Date updatedDate = rs.getDate("updated_date");
+
+				Chat chat = new Chat(chatId, chatName, chatDesc, groupId, createdDate, updatedDate);
+				chatList.add(chat);
+			}
+		} catch (SQLException err) {
+			System.out.println(err.getMessage());
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err.getMessage());
+		} catch (ClassNotFoundException err) {
+			System.out.println(err.getMessage());
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err.getMessage());
+		}
+
+		// Convert category list to json
+		String json = "";
+
+		try {
+			ObjectMapper mapper = new ObjectMapper();
+			json = mapper.writeValueAsString(chatList);
+		} catch (Exception err) {
+			System.out.println();
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err.getMessage());
+		}
+
+		return ResponseEntity.ok(json);
+	}
+
+	// Return chats based on userId
+	@GetMapping("/chat/user/{userId}")
+	ResponseEntity<String> getChatByUserId(@PathVariable int userId) {
+		ArrayList<Chat> chatList = new ArrayList<Chat>();
+
+		try {
+			Class.forName("org.postgresql.Driver");
+			Connection conn = DriverManager.getConnection(connectionString());
+
+			String storedProc = "select * from get_chat_by_user(?)";
+			PreparedStatement pstmt = conn.prepareStatement(storedProc);
+			pstmt.setInt(1, userId);
+
+			ResultSet rs = pstmt.executeQuery();
+			while (rs.next()) {
+				long chatId = rs.getLong("id");
+				String chatName = rs.getString("name");
+				String chatDesc = rs.getString("descr");
+				Date createdDate = rs.getDate("created_date");
+				Date updatedDate = rs.getDate("updated_date");
+				int groupId = rs.getInt("group_id");
+
+				Chat chat = new Chat(chatId, chatName, chatDesc, groupId, createdDate, updatedDate);
+				chatList.add(chat);
+			}
+		} catch (SQLException err) {
+			System.out.println(err.getMessage());
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err.getMessage());
+		} catch (ClassNotFoundException err) {
+			System.out.println(err.getMessage());
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err.getMessage());
+		}
+
+		// Convert category list to json
+		String json = "";
+
+		try {
+			ObjectMapper mapper = new ObjectMapper();
+			json = mapper.writeValueAsString(chatList);
+		} catch (Exception err) {
+			System.out.println();
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err.getMessage());
+		}
+
+		return ResponseEntity.ok(json);
+	}
+
+	String connectionString() {
+		String hostname = "chat.cgbqmmmv1tjp.us-east-1.rds.amazonaws.com"; // Figure out how to put this in the config
+																			// file.
+		String port = "5432";
+		String dbName = "chat";
+		String userName = "jlee";
+		String password = "103190jj";
+
+		return "jdbc:postgresql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password="
+				+ password;
+	}
+}

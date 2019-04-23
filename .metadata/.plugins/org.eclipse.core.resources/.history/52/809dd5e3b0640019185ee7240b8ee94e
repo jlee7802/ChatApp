@@ -1,0 +1,19 @@
+package com.category.controller;
+
+import java.util.ArrayList;
+
+import com.category.model.*;
+
+public class CategoryController {
+	private static List<Category> movieList = new ArrayList<>();
+    static {
+        movieList.add(1);
+        movieList.add(2);
+        movieList.add(3);
+    }
+
+    @GetMapping("/movies")
+    public ResponseEntity<?> getMovies() {
+        return ResponseEntity.ok(movieList);
+    }
+}

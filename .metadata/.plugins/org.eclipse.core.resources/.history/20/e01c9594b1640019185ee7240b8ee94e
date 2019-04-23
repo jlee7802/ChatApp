@@ -1,0 +1,33 @@
+package com.category.model;
+
+import java.sql.Date;
+
+public class Category {
+	public int id;
+	public String name;
+	public Date createdDate;
+	public Date updatedDate;
+	
+	public Category(int id, String name, Date createdDate, Date updatedDate){
+		this.id = id;
+		this.name = name;
+		this.createdDate = createdDate;
+		this.updatedDate = updatedDate;
+	}
+	
+	int getId() {
+		return this.id;
+	}
+	
+	String getCategoryName() {
+		return this.name;
+	}
+	
+	Date getCreatedDate() {
+		return this.createdDate;
+	}
+	
+	Date getUpdatedDate() {
+		return this.updatedDate;
+	}
+}

@@ -1,0 +1,156 @@
+package com.user.service;
+
+import java.sql.Connection;
+import java.sql.Date;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+public class UserController {
+	
+	// Checks to see if user exists in db
+	@GetMapping("/user/{email}/{pw}")
+	int home(@PathVariable String email, @PathVariable String pw) {
+		return connectToDB(email, pw);
+	}
+
+	// Gets users friends
+	@GetMapping("/user/{userId}/friendList")
+	public ResponseEntity<String> getFriendList(@PathVariable int userId) {
+		ArrayList<User> friendList = new ArrayList<User>();
+
+		try {
+			Class.forName("org.postgresql.Driver");
+			Connection conn = DriverManager.getConnection(connectionString());
+
+			String storedProc = "select * from get_friend_list(?)";
+			PreparedStatement pstmt = conn.prepareStatement(storedProc);
+			pstmt.setInt(1, userId);
+			ResultSet rs = pstmt.executeQuery();
+
+			while (rs.next()) {
+				String firstName = rs.getString("first_name");
+				String lastName = rs.getString("last_name");
+				String email = rs.getString("email");
+
+				User user = new User(userId, firstName, lastName, email);
+				friendList.add(user);
+			}
+		} catch (SQLException err) {
+			System.out.println(err.getMessage());
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err.getMessage());
+		} catch (ClassNotFoundException err) {
+			System.out.println(err.getMessage());
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err.getMessage());
+		}
+
+		// Convert friend list to json
+		String json = "";
+
+		try {
+			ObjectMapper mapper = new ObjectMapper();
+			json = mapper.writeValueAsString(friendList);
+		} catch (Exception err) {
+			System.out.println();
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err.getMessage());
+		}
+
+		return ResponseEntity.ok(json);
+	}
+
+	@PostMapping("/register")
+	public ResponseEntity<String> registerUsers(@RequestBody User user) {
+		long time = System.currentTimeMillis(); // This method doesnt consider timezone, so need to figure that out
+		user.createdDate = new Date(time);
+		user.updatedDate = new Date(time);
+
+		user.userId = registerUser(user);
+		String json = "";
+
+		try {
+			ObjectMapper mapper = new ObjectMapper();
+			json = mapper.writeValueAsString(user);
+		} catch (Exception err) {
+			System.out.println(err.getMessage());
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		}
+
+		return ResponseEntity.ok(json);
+	}
+
+	// Method to connect to user db. Will return user id if found in db.
+	int connectToDB(String em, String pw) {
+		try {
+			Class.forName("org.postgresql.Driver");
+			Connection conn = DriverManager.getConnection(connectionString());
+
+			String storedProc = "select * from get_user_cred(?,?)";
+			PreparedStatement pstmt = conn.prepareStatement(storedProc);
+			pstmt.setString(1, em);
+			pstmt.setString(2, pw);
+
+			ResultSet rs = pstmt.executeQuery();
+			if (rs.next()) {
+				return rs.getInt("user_id");
+			}
+		} catch (SQLException err) {
+			System.out.println(err.getMessage());
+		} catch (ClassNotFoundException err) {
+			System.out.println(err.getMessage());
+		}
+
+		return -1;
+	}
+
+	// Method to register user and insert new record into user table
+	int registerUser(User user) {
+		try {
+			Class.forName("org.postgresql.Driver");
+			Connection conn = DriverManager.getConnection(connectionString());
+
+			String storedProc = "select * from insert_user(?,?,?,?,?,?)";
+			PreparedStatement pstmt = conn.prepareStatement(storedProc);
+			pstmt.setString(1, user.firstName);
+			pstmt.setString(2, user.lastName);
+			pstmt.setString(3, user.email);
+			pstmt.setString(4, user.password);
+			pstmt.setDate(5, user.createdDate);
+			pstmt.setDate(6, user.updatedDate);
+
+			ResultSet rs = pstmt.executeQuery();
+
+			if (rs.next()) {
+				return rs.getInt("user_id");
+			}
+		} catch (SQLException err) {
+			System.out.println(err.getMessage());
+		} catch (ClassNotFoundException err) {
+			System.out.println(err.getMessage());
+		}
+
+		return -1;
+	}
+
+	String connectionString() {
+		String hostname = "usercred.cgbqmmmv1tjp.us-east-1.rds.amazonaws.com"; // Figure out how to put this in the
+																				// config file.
+		String port = "5432";
+		String dbName = "UserCred";
+		String userName = "UserCredAdmin";
+		String password = "103190jj";
+
+		return "jdbc:postgresql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password="
+				+ password;
+	}
+}
