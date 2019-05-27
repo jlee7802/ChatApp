@@ -7,7 +7,7 @@ import TileComp from './mainApp/TileComp.js'
 import ChatRoom from './mainApp/ChatRoom.js'
 import { createStore } from 'redux'
 import chatRoom from '../reducers/reducers.js'
-import { setCurrentChatroom } from '../actions/actions.js'
+import { setCurrentChatroom, setUser } from '../actions/actions.js'
 
 const store = createStore(chatRoom)
 
@@ -36,7 +36,13 @@ class DashBoard extends React.Component {
 	}
 
 	render(){
-		store.dispatch(setCurrentChatroom(1))
+		// Need to create the userObj/chatObj and pass it into the MainApp.js or just get it in the componentsWillMountMethod
+		const uObj = { id: 1, firstName: 'Jeff', lastName: 'Sprinkle', email: 'jsprinkle@gmail.com' }
+		const cObj = { id: 22, title: 'First Chat' }
+
+		store.dispatch(setUser(uObj))
+		const userObj = store.getState()
+		store.dispatch(setCurrentChatroom(cObj))
 		let chatObj = store.getState()
 
 		let centerComp = {};
@@ -45,7 +51,7 @@ class DashBoard extends React.Component {
 		}
 
 		if(true)
-			centerComp = <ChatRoom userId={this.props.userName} title='chat hoora' chatId={chatObj.todos.id}/>
+			centerComp = <ChatRoom user={userObj.todos} title='chat hoora' chatId={chatObj.todos.id}/>
 		else
 			centerComp = <TileComp userId={this.props.userId} clickProc={this.state.clickProc} setTileResult={this.setTileResult}/>
 
